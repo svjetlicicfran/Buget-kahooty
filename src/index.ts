@@ -19,7 +19,7 @@ async function main() {
     //Join connect socket.io sever later
 
     server.listen(PORT, () =>{
-        console.log(`erver runing at http://localhost:${PORT}`);
+        console.log(`Server runing at http://localhost:${PORT}`);
     });
 
 }
