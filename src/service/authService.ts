@@ -1,7 +1,7 @@
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import type { AuthResponse } from '../models/AuthResponse.ts';
-import db from '../db/db'; // Your Knex instance
+import db from '../db/db.ts'; // Your Knex instance
 
 
 export const JWT_SECRET = 'your_super_secret_random_key';
