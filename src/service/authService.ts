@@ -1,10 +1,7 @@
 import bcrypt from 'bcrypt';
-import jwt from 'jsonwebtoken';
 import type { AuthResponse } from '../models/AuthResponse.ts';
-import db from '../db/db'; // Your Knex instance
-
-
-export const JWT_SECRET = 'your_super_secret_random_key';
+import db from '../db/db';
+import { signToken } from './jwtService';
 
 export class AuthService {
 
@@ -46,8 +43,7 @@ export class AuthService {
                 return { success: false, message: "Invalid credentials" };
             }
 
-            const token = jwt.sign(
-                { userId: user.id }, JWT_SECRET, { expiresIn: "1h" });
+            const token = signToken({ userId: user.id });
 
             return {
                 success: true,
