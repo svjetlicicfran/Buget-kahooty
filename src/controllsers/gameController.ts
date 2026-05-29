@@ -36,10 +36,11 @@ export class GameController {
 
             // Player: join a session by PIN
             socket.on("join-session", ({ pin, name }: { pin: string; name: string }) => {
-                console.log(`[join-session] socket=${socket.id} pin=${pin} name=${name}`);
-                const session = this.sessions.get(pin);
+                const pinStr = String(pin);
+                console.log(`[join-session] socket=${socket.id} pin=${pinStr} name=${name}`);
+                const session = this.sessions.get(pinStr);
                 if (!session || session.state !== GameState.LOBBY) {
-                    console.log(`[join-session] rejected pin=${pin} state=${session?.state ?? "not found"}`);
+                    console.log(`[join-session] rejected pin=${pinStr} state=${session?.state ?? "not found"}`);
                     socket.emit("error", { message: "Session not found or already started" });
                     return;
                 }
@@ -51,27 +52,28 @@ export class GameController {
                     isOnline: true,
                 };
                 session.players.set(socket.id, player);
-                socket.join(pin);
-                socket.emit("joined", { pin });
+                socket.join(pinStr);
+                socket.emit("joined", { pin: pinStr });
                 io.to(session.hostSocketId).emit("player-joined", { name, socketId: socket.id, total: session.players.size });
-                console.log(`[join-session] pin=${pin} players=${session.players.size}`);
+                console.log(`[join-session] pin=${pinStr} players=${session.players.size}`);
             });
 
             // Host: start the game (LOBBY → QUESTION)
             socket.on("start-game", ({ pin }: { pin: string }) => {
-                console.log(`[start-game] socket=${socket.id} pin=${pin}`);
-                const session = this.sessions.get(pin);
-                if (!session || session.hostSocketId !== socket.id || session.state !== GameState.LOBBY) {
-                    console.log(`[start-game] rejected pin=${pin}`);
-                    return;
-                }
+                const pinStr = String(pin);
+                console.log(`[start-game] socket=${socket.id} pin=${pinStr}`);
+                const session = this.sessions.get(pinStr);
+                if (!session) { console.log(`[start-game] rejected — session not found pin=${pinStr}`); return; }
+                if (session.hostSocketId !== socket.id) { console.log(`[start-game] rejected — not host (expected=${session.hostSocketId} got=${socket.id})`); return; }
+                if (session.state !== GameState.LOBBY) { console.log(`[start-game] rejected — wrong state=${session.state}`); return; }
                 this.sendNextQuestion(io, session);
             });
 
             // Player: submit an answer
             socket.on("submit-answer", ({ pin, answerIndex, responseTime }: { pin: string; answerIndex: number; responseTime: number }) => {
-                console.log(`[submit-answer] socket=${socket.id} pin=${pin} answerIndex=${answerIndex} responseTime=${responseTime}ms`);
-                const session = this.sessions.get(pin);
+                const pinStr = String(pin);
+                console.log(`[submit-answer] socket=${socket.id} pin=${pinStr} answerIndex=${answerIndex} responseTime=${responseTime}ms`);
+                const session = this.sessions.get(pinStr);
                 if (!session || session.state !== GameState.QUESTION) return;
                 if (session.playerAnswers.has(socket.id)) {
                     console.log(`[submit-answer] duplicate ignored socket=${socket.id}`);
@@ -82,15 +84,16 @@ export class GameController {
                     answered: session.playerAnswers.size,
                     total: session.players.size,
                 });
-                console.log(`[submit-answer] pin=${pin} answered=${session.playerAnswers.size}/${session.players.size}`);
+                console.log(`[submit-answer] pin=${pinStr} answered=${session.playerAnswers.size}/${session.players.size}`);
             });
 
             // Host: reveal answers (QUESTION → REVEAL)
             socket.on("reveal-answers", ({ pin }: { pin: string }) => {
-                console.log(`[reveal-answers] socket=${socket.id} pin=${pin}`);
-                const session = this.sessions.get(pin);
+                const pinStr = String(pin);
+                console.log(`[reveal-answers] socket=${socket.id} pin=${pinStr}`);
+                const session = this.sessions.get(pinStr);
                 if (!session || session.hostSocketId !== socket.id || session.state !== GameState.QUESTION) {
-                    console.log(`[reveal-answers] rejected pin=${pin}`);
+                    console.log(`[reveal-answers] rejected pin=${pinStr}`);
                     return;
                 }
                 const question = session.questions[session.currentQuestionIndex];
@@ -106,22 +109,23 @@ export class GameController {
                     correctIndex: question.correctIndex,
                     scores: this.getScores(session),
                 });
-                console.log(`[reveal-answers] pin=${pin} correctIndex=${question.correctIndex}`);
+                console.log(`[reveal-answers] pin=${pinStr} correctIndex=${question.correctIndex}`);
             });
 
             // Host: next question or end game (REVEAL → QUESTION | FINISHED)
             socket.on("next-question", ({ pin }: { pin: string }) => {
-                console.log(`[next-question] socket=${socket.id} pin=${pin}`);
-                const session = this.sessions.get(pin);
+                const pinStr = String(pin);
+                console.log(`[next-question] socket=${socket.id} pin=${pinStr}`);
+                const session = this.sessions.get(pinStr);
                 if (!session || session.hostSocketId !== socket.id || session.state !== GameState.REVEAL) {
-                    console.log(`[next-question] rejected pin=${pin}`);
+                    console.log(`[next-question] rejected pin=${pinStr}`);
                     return;
                 }
                 if (session.currentQuestionIndex + 1 >= session.questions.length) {
                     session.state = GameState.FINISHED;
                     io.to(pin).emit("game-over", { scores: this.getScores(session) });
                     this.sessions.delete(pin);
-                    console.log(`[next-question] pin=${pin} game over`);
+                    console.log(`[next-question] pin=${pinStr} game over`);
                 } else {
                     this.sendNextQuestion(io, session);
                 }
