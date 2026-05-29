@@ -19,8 +19,8 @@ async function main() {
         cors: { origin: "*" },
     });
 
-    /*io.use((socket, next) => {
-        const token = socket.handshake.auth.token as string | undefined;
+    io.use((socket, next) => {
+        const token = socket.handshake.headers.authorization as string | undefined;
         if (!token) return next(new Error("Authentication required"));
         try {
             const payload = verifyToken(token);
@@ -29,7 +29,7 @@ async function main() {
         } catch {
             next(new Error("Invalid or expired token"));
         }
-    });*/
+    });
 
     app.use(express.json());
     app.use(cors());
