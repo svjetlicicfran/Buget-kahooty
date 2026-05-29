@@ -8,6 +8,7 @@ import cors from "cors";
 import { Server } from "socket.io";
 import { GameController } from "./controllsers/gameController";
 import { verifyToken } from "./service/jwtService";
+import quizzesRouter from "./routes/quizzes";
 
 const PORT: number = Number(process.env.PORT) || 8000;
 
@@ -35,6 +36,7 @@ async function main() {
     app.use(cors());
     app.use('/auth', loginRouter);
     app.use('/auth', registerRouter);
+    app.use('/api', quizzesRouter);
 
     const gameController = new GameController();
     gameController.registerSocketEvents(io);

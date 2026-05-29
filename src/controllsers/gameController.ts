@@ -1,14 +1,14 @@
 import { Server, Socket } from "socket.io";
 import { GameSession } from "../models/GameSession";
-import { Question } from "../models/Question";
 import { Player } from "../models/Player";
 import { GameState } from "../models/GameState";
+import { getQuestionsByQuizId } from "../service/questionService";
 
 export class GameController {
     private sessions: Map<string, GameSession> = new Map();
 
-    private createSession(pin: string, hostSocketId: string, questions: Question[]): GameSession {
-        const session = new GameSession(pin, hostSocketId, questions);
+    private createSession(pin: string, hostSocketId: string): GameSession {
+        const session = new GameSession(pin, hostSocketId, []);
         this.sessions.set(pin, session);
         return session;
     }
@@ -18,13 +18,20 @@ export class GameController {
             console.log(`[connect] socket=${socket.id}`);
 
             // Host: create a new game session
-            socket.on("create-session", (questions: Question[]) => {
-                console.log(`[create-session] socket=${socket.id} questions=${questions.length}`);
-                const pin = Math.floor(100000 + Math.random() * 900000).toString();
-                this.createSession(pin, socket.id, questions);
-                socket.join(pin);
-                socket.emit("session-created", { pin });
-                console.log(`[create-session] pin=${pin} created`);
+            socket.on("create-session", async ({ quizId }: { quizId: number }) => {
+                console.log(`[create-session] socket=${socket.id} quizId=${quizId}`);
+                try {
+                    const questions = await getQuestionsByQuizId(quizId);
+                    const pin = Math.floor(100000 + Math.random() * 900000).toString();
+                    const session = this.createSession(pin, socket.id);
+                    session.questions = questions;
+                    socket.join(pin);
+                    socket.emit("session-created", { pin });
+                    console.log(`[create-session] pin=${pin} created questions=${questions.length}`);
+                } catch (err) {
+                    console.log(`[create-session] failed quizId=${quizId}`, err);
+                    socket.emit("error", { message: "Failed to load quiz questions" });
+                }
             });
 
             // Player: join a session by PIN
