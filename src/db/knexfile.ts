@@ -1,4 +1,5 @@
 import type { Knex } from "knex";
+import "dotenv/config";
 
 const config: { [key: string]: Knex.Config } = {
   development: {
@@ -9,30 +10,7 @@ const config: { [key: string]: Knex.Config } = {
       password: process.env.DB_PASSWORD,
       database: process.env.DB_NAME,
     }
-  },
-  
-  // ... other configs
-  //staging: {
-  //  client: 'mysql2',
-  //  connection: {
-  //    database: 'my_db',
-  //    user: 'username',
-  //    password: 'password'
-  //  },
-  //  pool: { min: 2, max: 10 },
-  //  migrations: { tableName: 'knex_migrations' }
-  //},
-//
-  //production: {
-  //  client: 'mysql2',
-  //  connection: {
-  //    database: 'my_db',
-  //    user: 'username',
-  //    password: 'password'
-  //  },
-  //  pool: { min: 2, max: 10 },
-  //  migrations: { tableName: 'knex_migrations' }
-  //}
+  }
 
 };
 

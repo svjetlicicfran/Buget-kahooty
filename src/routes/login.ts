@@ -1,11 +1,12 @@
 import { Router, Request, Response } from "express";
-import { AuthController } from "../controllsers/authController";
+import { login } from "../service/loginService";
 
-const authController = new AuthController();
 const loginRouter = Router();
 
-loginRouter.post('/login', (request: Request, response: Response) => authController.login(request, response));
+loginRouter.post("/login", async (req: Request, res: Response) => {
+    const { username, password } = req.body;
+    const result = await login(username, password);
+    res.status(result.success ? 200 : 401).json(result);
+});
 
 export default loginRouter;
-
-//module.exports = router;

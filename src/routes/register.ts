@@ -1,11 +1,12 @@
-import { Router, Request, Response } from 'express';
-import { AuthController } from "../controllsers/authController";
+import { Router, Request, Response } from "express";
+import { register } from "../service/registerService";
 
-const authController = new AuthController();
 const registerRouter = Router();
 
-registerRouter.post('/register', (request: Request, response: Response) => authController.register(request, response));
+registerRouter.post("/register", async (req: Request, res: Response) => {
+    const { username, password } = req.body;
+    const result = await register(username, password);
+    res.status(result.success ? 200 : 400).json(result);
+});
 
 export default registerRouter;
-
-//module.exports = router;
