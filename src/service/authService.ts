@@ -3,6 +3,10 @@ import type { AuthResponse } from '../models/AuthResponse.ts';
 import db from '../db/db';
 import { signToken } from './jwtService';
 
+function toAdminFlag(value: unknown): boolean {
+    return value === true || value === 1 || value === '1' || value === 'true';
+}
+
 export class AuthService {
 
     async register(username: string, password: string): Promise<AuthResponse> {
@@ -43,12 +47,14 @@ export class AuthService {
                 return { success: false, message: "Invalid credentials" };
             }
 
-            const token = signToken({ userId: user.id });
+            const isAdmin = toAdminFlag(user.isAdmin);
+            const token = signToken({ userId: user.id, isAdmin });
 
             return {
                 success: true,
                 message: "Login successful",
-                token
+                token,
+                isAdmin
             };
 
         } catch (err) {
